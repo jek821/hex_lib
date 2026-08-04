@@ -1,0 +1,12 @@
+# Project overrides layered on top of the global ~/.editorconfig.
+# No `root = true`, so the global defaults (LF, utf-8, trim whitespace,
+# final newline, and tabs for Makefiles) still apply; this file only
+# changes what differs for this project.
+
+# C sources are formatted by ./.clang-format (BasedOnStyle: LLVM,
+# IndentWidth: 4, spaces). Edit with 4 spaces so typing matches what
+# clang-format produces on save.
+[*.{c,h}]
+indent_style = space
+indent_size = 4
+tab_width = 4
