@@ -3,10 +3,7 @@
 # Ignore those binaries, but keep all source, headers, and shell scripts.
 # This needs no edits when you add a new tool, as long as it follows the
 # hex_<tool>/hex<tool> naming convention.
-hex_*/hex*
-!hex_*/*.c
-!hex_*/*.h
-!hex_*/*.sh
+
 
 # Stale artifacts from ad-hoc `gcc -o main` / `gcc -o test` during development.
 hex_*/main
