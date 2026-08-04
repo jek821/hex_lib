@@ -1,5 +1,4 @@
 #include "../../hex_lib/hex_debug/hex_debug.h"
-#include <asm-generic/errno.h>
 #include <dirent.h>
 #include <linux/limits.h>
 #include <pthread.h>
