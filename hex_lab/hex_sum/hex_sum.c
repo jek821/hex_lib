@@ -150,7 +150,7 @@ void *run_thread(void *arg) {
 
 void test_job_insertion(thread_manager *tm) {
     pthread_mutex_lock(&tm->lock);
-    add_job("/home/jemanuel/jek_utils/hex_lab/hex_sum", tm);
+    add_job("/", tm);
     pthread_mutex_unlock(&tm->lock);
 }
 
