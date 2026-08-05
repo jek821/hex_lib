@@ -1,4 +1,5 @@
 #include "../../hex_lib/hex_debug/hex_debug.h"
+#include <asm-generic/errno.h>
 #include <dirent.h>
 #include <linux/limits.h>
 #include <pthread.h>
@@ -43,8 +44,9 @@ int add_job(char *path, thread_manager *tm) {
     // make sure new_job's next is NULL since malloc fills with garbage
     new_job->next_job = NULL;
 
-    // Lock mutex before editing the thread manager.
-    pthread_mutex_lock(&tm->lock);
+    // I thought we had to lock the mutex here
+    // but we do not because the thread that called this already has
+    // the lock from the wait condition set.
 
     // make new_job the next_job of the current tail
     // make new job the new tail of the job queue
@@ -56,10 +58,8 @@ int add_job(char *path, thread_manager *tm) {
         tm->jq_tail = new_job;
     }
 
-    // Unlock mutex
-    pthread_mutex_unlock(&tm->lock);
-    pthread_cond_broadcast(&tm->job_ready);
     debug("\nnew job broadcasted");
+    pthread_cond_signal(&tm->job_ready);
 
     return 0;
 }
@@ -70,12 +70,8 @@ job *get_job(thread_manager *tm, int t_id) {
     // Take the head of the queue (least recent job added), make the head's next the new head,
     // return pointer
 
-    // Lock mutex
-    pthread_mutex_lock(&tm->lock);
     job *acquired_job = tm->jq_head;
     tm->jq_head = acquired_job->next_job;
-    // Unlock mutex
-    pthread_mutex_unlock(&tm->lock);
 
     // I feel like I should just set the acquired job's next job link to NULL
     //  just to be safe because it should never be touched again, thread only needs to worry about
@@ -87,7 +83,7 @@ job *get_job(thread_manager *tm, int t_id) {
 }
 
 int do_job(job *job_todo, int t_id) {
-    debug("Thread (%d) is completing job for dir: %s", job_todo->path);
+    debug("Thread (%d) is completing job for dir: %s", t_id, job_todo->path);
     char *cwd = job_todo->path;
     DIR *dir = opendir(job_todo->path);
     if (!dir) {
@@ -134,7 +130,7 @@ void *run_thread(void *arg) {
             // shutdown
             pthread_mutex_lock(&tm->lock);
             tm->worker_err = job_wait_cond;
-            pthread_cond_broadcast(&tm->job_ready);
+            pthread_cond_signal(&tm->job_ready);
             pthread_mutex_unlock(&tm->lock);
             return NULL;
         }
@@ -147,14 +143,16 @@ void *run_thread(void *arg) {
         // job
         debug("\nend of run-thread");
         job *job_to_complete = get_job(tm, t_id);
-        debug("thread (%d), has gotten job for path %s", job_to_complete->path);
+        debug("thread (%d), has gotten job for path %s", t_id, job_to_complete->path);
         do_job(job_to_complete, t_id);
     }
     return NULL;
 }
 
 void test_job_insertion(thread_manager *tm) {
+    pthread_mutex_lock(&tm->lock);
     add_job("/home/jemanuel/jek_utils/hex_lab/hex_sum", tm);
+    pthread_mutex_unlock(&tm->lock);
 }
 
 void *run_kernel_thread(void *arg) {
